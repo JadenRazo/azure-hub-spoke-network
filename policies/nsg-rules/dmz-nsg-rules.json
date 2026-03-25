@@ -1,0 +1,212 @@
+{
+  "public": {
+    "description": "NSG rules for the DMZ spoke public subnet (10.2.1.0/24). This subnet hosts resources with direct internet exposure such as reverse proxies or public-facing load balancers.",
+    "inbound": [
+      {
+        "name": "Allow-Inbound-HTTP",
+        "properties": {
+          "description": "Allow HTTP from internet for public-facing services.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "80",
+          "sourceAddressPrefix": "Internet",
+          "destinationAddressPrefix": "10.2.1.0/24",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-HTTPS",
+        "properties": {
+          "description": "Allow HTTPS from internet for public-facing services.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "sourceAddressPrefix": "Internet",
+          "destinationAddressPrefix": "10.2.1.0/24",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-From-Hub",
+        "properties": {
+          "description": "Allow all inbound from the hub VNet for management, monitoring, and Bastion access.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "10.0.0.0/16",
+          "destinationAddressPrefix": "10.2.1.0/24",
+          "access": "Allow",
+          "priority": 200,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Deny-Inbound-All",
+        "properties": {
+          "description": "Deny all traffic not explicitly permitted. Prevents lateral movement from other sources.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "*",
+          "access": "Deny",
+          "priority": 4000,
+          "direction": "Inbound"
+        }
+      }
+    ],
+    "outbound": [
+      {
+        "name": "Allow-Outbound-To-WAF",
+        "properties": {
+          "description": "Allow traffic from public subnet to WAF subnet for backend forwarding.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRanges": ["80", "443", "8080", "8443"],
+          "sourceAddressPrefix": "10.2.1.0/24",
+          "destinationAddressPrefix": "10.2.2.0/24",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Outbound"
+        }
+      },
+      {
+        "name": "Allow-Outbound-Internet",
+        "properties": {
+          "description": "Allow HTTPS egress — traffic routes through hub firewall via UDR for FQDN inspection.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "sourceAddressPrefix": "10.2.1.0/24",
+          "destinationAddressPrefix": "Internet",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Outbound"
+        }
+      }
+    ]
+  },
+  "waf": {
+    "description": "NSG rules for the DMZ spoke WAF subnet (10.2.2.0/24). Azure Application Gateway v2 requires ports 65200-65535 for its health probe infrastructure — these must be allowed from GatewayManager and AzureLoadBalancer.",
+    "inbound": [
+      {
+        "name": "Allow-Inbound-AppGW-Infrastructure",
+        "properties": {
+          "description": "Required by Application Gateway v2: allows the Azure Gateway Manager to communicate with the gateway nodes. Without this rule, the Application Gateway will fail to provision.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "65200-65535",
+          "sourceAddressPrefix": "GatewayManager",
+          "destinationAddressPrefix": "*",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-AppGW-HTTP",
+        "properties": {
+          "description": "Allow HTTP traffic destined for Application Gateway listeners.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "80",
+          "sourceAddressPrefix": "Internet",
+          "destinationAddressPrefix": "10.2.2.0/24",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-AppGW-HTTPS",
+        "properties": {
+          "description": "Allow HTTPS traffic destined for Application Gateway listeners.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "sourceAddressPrefix": "Internet",
+          "destinationAddressPrefix": "10.2.2.0/24",
+          "access": "Allow",
+          "priority": 120,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-AzureLoadBalancer",
+        "properties": {
+          "description": "Allow Azure Load Balancer health probes to the Application Gateway nodes.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "AzureLoadBalancer",
+          "destinationAddressPrefix": "*",
+          "access": "Allow",
+          "priority": 130,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-From-Hub",
+        "properties": {
+          "description": "Allow hub management traffic for monitoring and Bastion-based access.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "10.0.0.0/16",
+          "destinationAddressPrefix": "10.2.2.0/24",
+          "access": "Allow",
+          "priority": 200,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Deny-Inbound-All",
+        "properties": {
+          "description": "Deny everything not explicitly permitted.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "*",
+          "access": "Deny",
+          "priority": 4000,
+          "direction": "Inbound"
+        }
+      }
+    ],
+    "outbound": [
+      {
+        "name": "Allow-Outbound-To-Backend",
+        "properties": {
+          "description": "Allow Application Gateway to forward to backend pools in the workload spoke.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRanges": ["80", "443", "8080", "8443"],
+          "sourceAddressPrefix": "10.2.2.0/24",
+          "destinationAddressPrefix": "10.1.0.0/16",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Outbound"
+        }
+      },
+      {
+        "name": "Allow-Outbound-AzureCloud",
+        "properties": {
+          "description": "Allow outbound to Azure platform services for certificate validation, Key Vault, and monitoring.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "sourceAddressPrefix": "10.2.2.0/24",
+          "destinationAddressPrefix": "AzureCloud",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Outbound"
+        }
+      }
+    ]
+  }
+}

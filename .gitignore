@@ -1,0 +1,32 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+*.tfplan
+.terraform.lock.hcl
+crash.log
+
+# Terraform variable files with real values (use terraform.tfvars.example as template)
+terraform.tfvars
+
+# Secrets and credentials
+.env
+*.pem
+*.key
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Developer-specific configuration
+CLAUDE.md
+.claude/

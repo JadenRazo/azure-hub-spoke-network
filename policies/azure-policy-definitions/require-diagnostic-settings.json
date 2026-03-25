@@ -1,0 +1,67 @@
+{
+  "properties": {
+    "displayName": "Network resources should have diagnostic settings enabled",
+    "description": "Audits Virtual Networks, Network Security Groups, and Azure Firewalls that do not have a diagnostic setting sending logs to a Log Analytics workspace. AuditIfNotExists generates a compliance event for any in-scope resource that lacks at least one active diagnostic setting.",
+    "mode": "All",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Monitoring"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "AuditIfNotExists emits a compliance audit event. Disabled turns off the policy entirely."
+        },
+        "allowedValues": [
+          "AuditIfNotExists",
+          "Disabled"
+        ],
+        "defaultValue": "AuditIfNotExists"
+      },
+      "logAnalyticsWorkspaceId": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Log Analytics Workspace Resource ID",
+          "description": "The full resource ID of the Log Analytics workspace that diagnostic settings must target.",
+          "strongType": "omsWorkspace"
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "field": "type",
+        "in": [
+          "Microsoft.Network/virtualNetworks",
+          "Microsoft.Network/networkSecurityGroups",
+          "Microsoft.Network/azureFirewalls"
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "type": "Microsoft.Insights/diagnosticSettings",
+          "existenceCondition": {
+            "allOf": [
+              {
+                "field": "Microsoft.Insights/diagnosticSettings/workspaceId",
+                "equals": "[parameters('logAnalyticsWorkspaceId')]"
+              },
+              {
+                "count": {
+                  "field": "Microsoft.Insights/diagnosticSettings/logs[*]",
+                  "where": {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs[*].enabled",
+                    "equals": "true"
+                  }
+                },
+                "greaterOrEquals": 1
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,100 @@
+[
+  {
+    "name": "Allow-Inbound-RFC1918",
+    "properties": {
+      "description": "Allow all inbound traffic from RFC 1918 private address space. Covers hub (10.0.0.0/16), workload spoke (10.1.0.0/16), and DMZ spoke (10.2.0.0/16).",
+      "protocol": "*",
+      "sourcePortRange": "*",
+      "destinationPortRange": "*",
+      "sourceAddressPrefix": "10.0.0.0/8",
+      "destinationAddressPrefix": "10.0.4.0/24",
+      "access": "Allow",
+      "priority": 100,
+      "direction": "Inbound"
+    }
+  },
+  {
+    "name": "Allow-Inbound-AzureLoadBalancer",
+    "properties": {
+      "description": "Allow Azure Load Balancer health probe traffic. Required for any internal load balancer fronting shared services.",
+      "protocol": "*",
+      "sourcePortRange": "*",
+      "destinationPortRange": "*",
+      "sourceAddressPrefix": "AzureLoadBalancer",
+      "destinationAddressPrefix": "*",
+      "access": "Allow",
+      "priority": 110,
+      "direction": "Inbound"
+    }
+  },
+  {
+    "name": "Deny-Inbound-Internet",
+    "properties": {
+      "description": "Block all inbound traffic originating from the internet. Shared services subnet is internal-only; any internet-facing access must go through the hub firewall or Bastion.",
+      "protocol": "*",
+      "sourcePortRange": "*",
+      "destinationPortRange": "*",
+      "sourceAddressPrefix": "Internet",
+      "destinationAddressPrefix": "*",
+      "access": "Deny",
+      "priority": 200,
+      "direction": "Inbound"
+    }
+  },
+  {
+    "name": "Deny-Inbound-All",
+    "properties": {
+      "description": "Explicit catch-all deny for all remaining inbound traffic. Placed before the implicit Azure default deny to make intent visible in the audit trail.",
+      "protocol": "*",
+      "sourcePortRange": "*",
+      "destinationPortRange": "*",
+      "sourceAddressPrefix": "*",
+      "destinationAddressPrefix": "*",
+      "access": "Deny",
+      "priority": 4000,
+      "direction": "Inbound"
+    }
+  },
+  {
+    "name": "Allow-Outbound-Internal",
+    "properties": {
+      "description": "Allow outbound traffic to all RFC 1918 internal ranges. Shared services must be able to reach spokes and hub resources for management, DNS, and monitoring.",
+      "protocol": "*",
+      "sourcePortRange": "*",
+      "destinationPortRange": "*",
+      "sourceAddressPrefix": "10.0.4.0/24",
+      "destinationAddressPrefix": "10.0.0.0/8",
+      "access": "Allow",
+      "priority": 100,
+      "direction": "Outbound"
+    }
+  },
+  {
+    "name": "Allow-Outbound-AzureServices",
+    "properties": {
+      "description": "Allow outbound to Azure platform service tags for storage, monitoring, and management plane access.",
+      "protocol": "Tcp",
+      "sourcePortRange": "*",
+      "destinationPortRanges": ["443", "12000"],
+      "sourceAddressPrefix": "10.0.4.0/24",
+      "destinationAddressPrefix": "AzureCloud",
+      "access": "Allow",
+      "priority": 110,
+      "direction": "Outbound"
+    }
+  },
+  {
+    "name": "Deny-Outbound-Internet",
+    "properties": {
+      "description": "Block direct internet egress from the shared services subnet. All internet-bound traffic must be routed through Azure Firewall via the UDR on this subnet. This NSG rule provides defense-in-depth on top of the UDR.",
+      "protocol": "*",
+      "sourcePortRange": "*",
+      "destinationPortRange": "*",
+      "sourceAddressPrefix": "10.0.4.0/24",
+      "destinationAddressPrefix": "Internet",
+      "access": "Deny",
+      "priority": 200,
+      "direction": "Outbound"
+    }
+  }
+]

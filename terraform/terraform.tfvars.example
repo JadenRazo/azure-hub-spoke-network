@@ -1,0 +1,90 @@
+# ---------------------------------------------------------------------------
+# terraform.tfvars.example
+#
+# Copy this file to terraform.tfvars and fill in the values before running
+# terraform plan / apply. The terraform.tfvars file is gitignored; never
+# commit real credentials or subscription IDs.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Core
+# ---------------------------------------------------------------------------
+
+# Target Azure region. Must be a valid Azure region string.
+location = "eastus"
+
+# Deployment environment. Allowed values: dev, staging, prod.
+environment = "dev"
+
+# ---------------------------------------------------------------------------
+# VM credentials
+# ---------------------------------------------------------------------------
+
+# Local administrator username for test VMs. Avoid common names like 'admin'.
+admin_username = "azureadmin"
+
+# Local administrator password. Must be at least 12 characters and meet
+# Azure complexity requirements (uppercase, lowercase, digit, special char).
+admin_password = "<YOUR_PASSWORD_HERE>"
+
+# Azure VM size for the two test VMs (one per spoke).
+vm_size = "Standard_B1s"
+
+# ---------------------------------------------------------------------------
+# Hub VNet address spaces
+# ---------------------------------------------------------------------------
+
+hub_vnet_address_space     = ["10.0.0.0/16"]
+hub_subnet_firewall        = "10.0.1.0/26"
+hub_subnet_bastion         = "10.0.2.0/26"
+hub_subnet_gateway         = "10.0.3.0/27"
+hub_subnet_shared_services = "10.0.4.0/24"
+
+# ---------------------------------------------------------------------------
+# Workload spoke address spaces
+# ---------------------------------------------------------------------------
+
+workload_vnet_address_space = ["10.1.0.0/16"]
+workload_subnet_web         = "10.1.1.0/24"
+workload_subnet_app         = "10.1.2.0/24"
+workload_subnet_data        = "10.1.3.0/24"
+
+# ---------------------------------------------------------------------------
+# DMZ spoke address spaces
+# ---------------------------------------------------------------------------
+
+dmz_vnet_address_space = ["10.2.0.0/16"]
+dmz_subnet_public      = "10.2.1.0/24"
+dmz_subnet_waf         = "10.2.2.0/24"
+
+# ---------------------------------------------------------------------------
+# Feature flags
+# ---------------------------------------------------------------------------
+
+# Set to false to skip Azure Firewall (saves ~$1.25/hr in lab environments).
+enable_azure_firewall = true
+
+# Set to false to skip Azure Bastion.
+enable_bastion = true
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+
+# Data retention period in days (30–730).
+log_analytics_retention_days = 30
+
+# ---------------------------------------------------------------------------
+# DNS
+# ---------------------------------------------------------------------------
+
+private_dns_zone_name = "hubspoke.internal"
+
+# ---------------------------------------------------------------------------
+# Additional tags (merged with defaults)
+# ---------------------------------------------------------------------------
+
+tags = {
+  owner      = "your-name"
+  cost_center = "engineering"
+}

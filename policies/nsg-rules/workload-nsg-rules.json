@@ -1,0 +1,261 @@
+{
+  "web": {
+    "description": "NSG rules for the workload spoke web tier subnet (10.1.1.0/24). This subnet is internet-facing and sits behind Azure Firewall DNAT or an Application Gateway in production.",
+    "inbound": [
+      {
+        "name": "Allow-Inbound-HTTP",
+        "properties": {
+          "description": "Allow HTTP from internet. In production, the source would be scoped to the Application Gateway or WAF subnet. Left open here for lab connectivity testing.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "80",
+          "sourceAddressPrefix": "Internet",
+          "destinationAddressPrefix": "10.1.1.0/24",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-HTTPS",
+        "properties": {
+          "description": "Allow HTTPS from internet.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "sourceAddressPrefix": "Internet",
+          "destinationAddressPrefix": "10.1.1.0/24",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-SSH-From-Bastion",
+        "properties": {
+          "description": "Allow SSH from the hub Bastion subnet only. Bastion communicates on port 22 toward the target VM after the user authenticates through the portal.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "22",
+          "sourceAddressPrefix": "10.0.2.0/26",
+          "destinationAddressPrefix": "10.1.1.0/24",
+          "access": "Allow",
+          "priority": 200,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Deny-Inbound-All",
+        "properties": {
+          "description": "Explicit catch-all deny. Any traffic not explicitly permitted above is blocked.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "*",
+          "access": "Deny",
+          "priority": 4000,
+          "direction": "Inbound"
+        }
+      }
+    ],
+    "outbound": [
+      {
+        "name": "Allow-Outbound-To-App-Tier",
+        "properties": {
+          "description": "Allow web tier to reach app tier on application ports.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRanges": ["8080", "8443"],
+          "sourceAddressPrefix": "10.1.1.0/24",
+          "destinationAddressPrefix": "10.1.2.0/24",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Outbound"
+        }
+      },
+      {
+        "name": "Allow-Outbound-Internet",
+        "properties": {
+          "description": "Allow internet egress — routes through the hub firewall via UDR. The UDR enforces the actual path; this rule permits the NSG layer.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRanges": ["80", "443"],
+          "sourceAddressPrefix": "10.1.1.0/24",
+          "destinationAddressPrefix": "Internet",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Outbound"
+        }
+      }
+    ]
+  },
+  "app": {
+    "description": "NSG rules for the workload spoke app tier subnet (10.1.2.0/24). This subnet should only be reachable from the web tier and hub management traffic.",
+    "inbound": [
+      {
+        "name": "Allow-Inbound-From-Web-Tier",
+        "properties": {
+          "description": "Allow inbound from the web tier on application server ports (Tomcat, Spring Boot, etc.).",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRanges": ["8080", "8443"],
+          "sourceAddressPrefix": "10.1.1.0/24",
+          "destinationAddressPrefix": "10.1.2.0/24",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-SSH-From-Bastion",
+        "properties": {
+          "description": "Allow SSH from the hub Bastion subnet for administrative access.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "22",
+          "sourceAddressPrefix": "10.0.2.0/26",
+          "destinationAddressPrefix": "10.1.2.0/24",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-From-Hub",
+        "properties": {
+          "description": "Allow all traffic from the hub VNet for monitoring, log agent communication, and management.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "10.0.0.0/16",
+          "destinationAddressPrefix": "10.1.2.0/24",
+          "access": "Allow",
+          "priority": 120,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Deny-Inbound-All",
+        "properties": {
+          "description": "Block anything not explicitly allowed. No direct internet access to app tier.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "*",
+          "access": "Deny",
+          "priority": 4000,
+          "direction": "Inbound"
+        }
+      }
+    ],
+    "outbound": [
+      {
+        "name": "Allow-Outbound-To-Data-Tier",
+        "properties": {
+          "description": "Allow app tier to reach data tier databases (SQL Server, PostgreSQL, MySQL).",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRanges": ["1433", "5432", "3306"],
+          "sourceAddressPrefix": "10.1.2.0/24",
+          "destinationAddressPrefix": "10.1.3.0/24",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Outbound"
+        }
+      },
+      {
+        "name": "Allow-Outbound-Internet-Https",
+        "properties": {
+          "description": "Allow HTTPS egress for package updates and external API calls. Traffic is forced through the hub firewall via UDR for inspection.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "sourceAddressPrefix": "10.1.2.0/24",
+          "destinationAddressPrefix": "Internet",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Outbound"
+        }
+      }
+    ]
+  },
+  "data": {
+    "description": "NSG rules for the workload spoke data tier subnet (10.1.3.0/24). Strictest ruleset in the spoke — inbound limited to app tier database ports only.",
+    "inbound": [
+      {
+        "name": "Allow-Inbound-SQL-From-App",
+        "properties": {
+          "description": "Allow inbound from app tier on common database ports: MS SQL (1433), PostgreSQL (5432), MySQL (3306).",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRanges": ["1433", "5432", "3306"],
+          "sourceAddressPrefix": "10.1.2.0/24",
+          "destinationAddressPrefix": "10.1.3.0/24",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Allow-Inbound-SSH-From-Bastion",
+        "properties": {
+          "description": "Allow SSH from the hub Bastion subnet only. DBA access goes through Bastion; no direct SSH from internet.",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "22",
+          "sourceAddressPrefix": "10.0.2.0/26",
+          "destinationAddressPrefix": "10.1.3.0/24",
+          "access": "Allow",
+          "priority": 110,
+          "direction": "Inbound"
+        }
+      },
+      {
+        "name": "Deny-Inbound-All",
+        "properties": {
+          "description": "Deny everything else. Data tier is isolated from internet and all other subnets except app tier.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "*",
+          "access": "Deny",
+          "priority": 4000,
+          "direction": "Inbound"
+        }
+      }
+    ],
+    "outbound": [
+      {
+        "name": "Allow-Outbound-To-App-Tier",
+        "properties": {
+          "description": "Allow return traffic back to the app tier (connection state handles this, but explicit is better).",
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "10.1.3.0/24",
+          "destinationAddressPrefix": "10.1.2.0/24",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Outbound"
+        }
+      },
+      {
+        "name": "Deny-Outbound-Internet",
+        "properties": {
+          "description": "Data tier VMs must not initiate internet connections. Backup and patch traffic should route through an approved proxy.",
+          "protocol": "*",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "sourceAddressPrefix": "10.1.3.0/24",
+          "destinationAddressPrefix": "Internet",
+          "access": "Deny",
+          "priority": 200,
+          "direction": "Outbound"
+        }
+      }
+    ]
+  }
+}

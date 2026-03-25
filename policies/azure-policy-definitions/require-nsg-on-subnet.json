@@ -1,0 +1,51 @@
+{
+  "properties": {
+    "displayName": "Subnets should have a Network Security Group",
+    "description": "Deny the creation or update of a subnet that does not have a Network Security Group associated. AzureFirewallSubnet, AzureBastionSubnet, and GatewaySubnet are excluded because Azure does not support NSGs on those subnets.",
+    "mode": "All",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Network"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "The effect determines what happens when the policy rule is evaluated to match. Deny prevents creation; Audit logs a non-compliant event without blocking."
+        },
+        "allowedValues": [
+          "Deny",
+          "Audit",
+          "Disabled"
+        ],
+        "defaultValue": "Deny"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Network/virtualNetworks/subnets"
+          },
+          {
+            "field": "name",
+            "notIn": [
+              "AzureFirewallSubnet",
+              "AzureBastionSubnet",
+              "GatewaySubnet"
+            ]
+          },
+          {
+            "field": "Microsoft.Network/virtualNetworks/subnets/networkSecurityGroup.id",
+            "exists": "false"
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  }
+}

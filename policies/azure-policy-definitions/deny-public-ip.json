@@ -1,0 +1,46 @@
+{
+  "properties": {
+    "displayName": "Deny creation of Public IP addresses",
+    "description": "Prevents the creation of Public IP address resources in spoke resource groups. All internet ingress should flow through the hub DMZ or Azure Firewall DNAT rules. Assign this policy at the spoke subscription or management group scope and exclude the hub resource group.",
+    "mode": "All",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Network"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Deny blocks creation outright. Audit logs the violation without blocking. Use Audit initially to assess impact before switching to Deny."
+        },
+        "allowedValues": [
+          "Deny",
+          "Audit",
+          "Disabled"
+        ],
+        "defaultValue": "Deny"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Network/publicIPAddresses"
+          },
+          {
+            "field": "Microsoft.Network/publicIPAddresses/publicIPAllocationMethod",
+            "in": [
+              "Dynamic",
+              "Static"
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  }
+}
