@@ -106,17 +106,17 @@ resource "azurerm_network_security_rule" "hub_shared_deny_inbound_all" {
 
 # Allow outbound to internal RFC 1918 ranges
 resource "azurerm_network_security_rule" "hub_shared_allow_outbound_internal" {
-  name                        = "Allow-Outbound-Internal"
-  priority                    = 100
-  direction                   = "Outbound"
-  access                      = "Allow"
-  protocol                    = "*"
-  source_port_range           = "*"
-  destination_port_range      = "*"
-  source_address_prefix       = var.hub_subnet_shared_services
+  name                         = "Allow-Outbound-Internal"
+  priority                     = 100
+  direction                    = "Outbound"
+  access                       = "Allow"
+  protocol                     = "*"
+  source_port_range            = "*"
+  destination_port_range       = "*"
+  source_address_prefix        = var.hub_subnet_shared_services
   destination_address_prefixes = ["10.0.0.0/8"]
-  resource_group_name         = azurerm_resource_group.hub.name
-  network_security_group_name = azurerm_network_security_group.hub_shared_services.name
+  resource_group_name          = azurerm_resource_group.hub.name
+  network_security_group_name  = azurerm_network_security_group.hub_shared_services.name
 }
 
 # Deny direct internet egress — all spoke traffic must route through the firewall

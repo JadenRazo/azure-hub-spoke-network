@@ -29,9 +29,9 @@ resource "azurerm_bastion_host" "hub" {
   sku                 = "Standard"
 
   # Standard SKU features
-  tunneling_enabled     = true
-  file_copy_enabled     = true
-  copy_paste_enabled    = true
+  tunneling_enabled      = true
+  file_copy_enabled      = true
+  copy_paste_enabled     = true
   shareable_link_enabled = true
 
   ip_configuration {
