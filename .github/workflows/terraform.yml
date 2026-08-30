@@ -56,3 +56,4 @@ jobs:
           working_directory: ${{ env.TF_WORKING_DIR }}
           soft_fail: false
           format: lovely
+          github_token: ${{ github.token }}
